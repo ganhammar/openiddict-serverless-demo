@@ -1,0 +1,31 @@
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: eu-north-1
+
+permissions:
+  id-token: write
+  contents: read
+  packages: read
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET Core SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: aws-actions/setup-sam@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: eu-north-1
+          role-to-assume: ${{ vars.DEPLOY_ROLE }}
+          role-session-name: OIDCSession
+      - run: sam build
+      - run: sam deploy --no-fail-on-empty-changeset --stack-name openiddict-serverless-demo --resolve-s3 --capabilities CAPABILITY_IAM
