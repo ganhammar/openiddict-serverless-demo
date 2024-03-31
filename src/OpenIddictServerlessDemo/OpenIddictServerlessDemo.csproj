@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.AspNetCore.DataProtection.SSM" Version="3.2.0" />
+    <PackageReference Include="Amazon.Extensions.Configuration.SystemsManager" Version="6.0.0" />
+    <PackageReference Include="Amazon.Lambda.AspNetCoreServer" Version="9.0.0" />
+    <PackageReference Include="AWS.Lambda.Powertools.Logging" Version="1.5.1" />
+    <PackageReference Include="AWS.Lambda.Powertools.Tracing" Version="1.4.2" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.302.3" />
+    <PackageReference Include="AWSXRayRecorder.Handlers.AspNetCore" Version="2.11.0" />
+    <PackageReference Include="Community.OpenIddict.AmazonDynamoDB" Version="2.2.0" />
+    <PackageReference Include="OpenIddict.AspNetCore" Version="5.4.0" />
+  </ItemGroup>
+</Project>
