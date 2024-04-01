@@ -41,10 +41,18 @@ Resources:
             TableName:
               Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict
         - Statement:
-            - Effect: Allow
-              Action:
-                - ssm:GetParametersByPath
-              Resource: 
-                Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/Certificates
+          - Effect: Allow
+            Action:
+              - ssm:GetParametersByPath
+            Resource: 
+              - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/Certificates
+        - Statement:
+          - Effect: Allow
+            Action:
+              - ssm:PutParameter
+              - ssm:GetParameter
+              - ssm:DescribeParameters
+            Resource: 
+              - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/DataProtection
     Metadata:
       BuildMethod: makefile
