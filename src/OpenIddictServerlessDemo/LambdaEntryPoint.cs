@@ -7,7 +7,7 @@ using AWS.Lambda.Powertools.Tracing;
 
 namespace OpenIddictServerlessDemo;
 
-public class LambdaEntryPoint : APIGatewayProxyFunction
+public class LambdaEntryPoint : APIGatewayHttpApiV2ProxyFunction
 {
   protected override void Init(IWebHostBuilder builder)
   {
@@ -30,8 +30,8 @@ public class LambdaEntryPoint : APIGatewayProxyFunction
   [LambdaSerializer(typeof(DefaultLambdaJsonSerializer))]
   [Logging(CorrelationIdPath = CorrelationIdPaths.ApiGatewayRest, LogEvent = true)]
   [Tracing]
-  public override Task<APIGatewayProxyResponse> FunctionHandlerAsync(
-    APIGatewayProxyRequest request, ILambdaContext lambdaContext)
+  public override Task<APIGatewayHttpApiV2ProxyResponse> FunctionHandlerAsync(
+    APIGatewayHttpApiV2ProxyRequest request, ILambdaContext lambdaContext)
   {
     if (!_defaultDimensions.ContainsKey("Version"))
       _defaultDimensions.Add("Version", lambdaContext.FunctionVersion ?? "Unknown");
