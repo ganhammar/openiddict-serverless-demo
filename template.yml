@@ -17,14 +17,15 @@ Globals:
 
 Resources:
   OpenIddictApi:
-    Type: AWS::Serverless::Api
+    Type: AWS::Serverless::HttpApi
     Properties:
-      StageName: prod
-      Cors:
-        AllowOrigin: "'http://localhost:8001'"
-        AllowHeaders: "'*'"
-        AllowMethods: "'*'"
-        AllowCredentials: "'true'"
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - "http://localhost:8001"
+        AllowHeaders: "*"
+        AllowMethods: "*"
+        AllowCredentials: true
   OpenIddictFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -32,7 +33,7 @@ Resources:
       Handler: OpenIddictServerlessDemo::OpenIddictServerlessDemo.LambdaEntryPoint::FunctionHandlerAsync
       Events:
         Api:
-          Type: Api
+          Type: HttpApi
           Properties:
             RestApiId: !Ref OpenIddictApi
             Path: /{proxy+}
