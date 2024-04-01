@@ -58,5 +58,10 @@ Resources:
             Action:
               - dynamodb:ListTables
             Resource: "*"
+          - Effect: Allow
+            Action:
+              - dynamodb:DescribeTable
+            Resource:
+              - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict
     Metadata:
       BuildMethod: makefile
