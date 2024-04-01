@@ -56,6 +56,12 @@ Resources:
               - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/DataProtection/
           - Effect: Allow
             Action:
+              - dynamodb:Query
+            Resource:
+              - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict/index/*
+          # Needed for setup script, should not be run during startup in production
+          - Effect: Allow
+            Action:
               - dynamodb:ListTables
             Resource: "*"
           - Effect: Allow

@@ -77,11 +77,13 @@ public class Startup(IConfiguration configuration, IHostEnvironment environment)
 
   public void Configure(IApplicationBuilder app)
   {
+    // Setup: Only for demo purpose, should not be run during startup in production, move to setup script
     OpenIddictDynamoDbSetup.EnsureInitialized(app.ApplicationServices);
     using (var scope = app.ApplicationServices.CreateScope())
     {
       CreateDemoClient(scope.ServiceProvider).GetAwaiter().GetResult();
     }
+    // End of setup
 
     app.UseXRay("openiddict-serverless-demo");
     app.UseRouting();
