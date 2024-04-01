@@ -13,6 +13,7 @@ Globals:
     Environment:
       Variables:
         TABLE_NAME: openiddict-serverless-demo.openiddict
+        ASPNETCORE_ENVIRONMENT: Production
 
 Resources:
   OpenIddictApi:
@@ -28,7 +29,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/OpenIddictServerlessDemo
-      Handler: OpenIddictServerlessDemo
+      Handler: OpenIddictServerlessDemo::OpenIddictServerlessDemo.LambdaEntryPoint::FunctionHandlerAsync
       Events:
         Api:
           Type: Api
