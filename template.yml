@@ -46,7 +46,6 @@ Resources:
               - ssm:GetParametersByPath
             Resource: 
               - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/Certificates
-        - Statement:
           - Effect: Allow
             Action:
               - ssm:PutParameter
@@ -55,5 +54,9 @@ Resources:
               - ssm:GetParametersByPath
             Resource: 
               - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/DataProtection/
+          - Effect: Allow
+            Action:
+              - dynamodb:ListTables
+            Resource: "*"
     Metadata:
       BuildMethod: makefile
