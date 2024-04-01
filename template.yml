@@ -61,6 +61,7 @@ Resources:
           - Effect: Allow
             Action:
               - dynamodb:DescribeTable
+              - dynamodb:DescribeTimeToLive
             Resource:
               - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict
     Metadata:
