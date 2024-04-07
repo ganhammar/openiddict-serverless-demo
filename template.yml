@@ -18,14 +18,6 @@ Globals:
 Resources:
   OpenIddictApi:
     Type: AWS::Serverless::HttpApi
-    Properties:
-      StageName: $default
-      CorsConfiguration:
-        AllowOrigins:
-          - "http://localhost:8001"
-        AllowHeaders: "*"
-        AllowMethods: "*"
-        AllowCredentials: true
   OpenIddictFunction:
     Type: AWS::Serverless::Function
     Properties:
