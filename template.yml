@@ -9,7 +9,6 @@ Globals:
       - arm64
     Runtime: dotnet8
     Timeout: 30
-    Tracing: Active
     Environment:
       Variables:
         TABLE_NAME: openiddict-serverless-demo.openiddict
@@ -32,8 +31,7 @@ Resources:
             Method: ANY
       Policies:
         - DynamoDBCrudPolicy:
-            TableName:
-              Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict
+            TableName: !Sub "openiddict-serverless-demo.openiddict"
         - Statement:
           - Effect: Allow
             Action:
@@ -48,11 +46,6 @@ Resources:
               - ssm:GetParametersByPath
             Resource: 
               - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/DataProtection/
-          - Effect: Allow
-            Action:
-              - dynamodb:Query
-            Resource:
-              - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict/index/*
           # Needed for setup script, should not be run during startup in production
           - Effect: Allow
             Action:
