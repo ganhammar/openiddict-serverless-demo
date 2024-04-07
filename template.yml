@@ -22,7 +22,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src/OpenIddictServerlessDemo
-      Handler: OpenIddictServerlessDemo::OpenIddictServerlessDemo.LambdaEntryPoint::FunctionHandlerAsync
+      Handler: OpenIddictServerlessDemo
       Events:
         Api:
           Type: HttpApi
