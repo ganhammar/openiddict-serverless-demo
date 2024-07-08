@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using Amazon.DynamoDBv2;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.AmazonDynamoDB;
@@ -75,11 +76,13 @@ app.MapPost("/connect/token", async (
 
   if (application == default)
   {
-    return Results.BadRequest(new OpenIddictResponse
-    {
-      Error = Errors.InvalidClient,
-      ErrorDescription = "The specified client identifier is invalid."
-    });
+    return Results.Challenge(
+      authenticationSchemes: [OpenIddictServerAspNetCoreDefaults.AuthenticationScheme],
+      properties: new AuthenticationProperties(new Dictionary<string, string?>
+      {
+        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.InvalidClient,
+        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The specified hardcoded identity is invalid."
+      }));
   }
 
   var identity = new ClaimsIdentity(
