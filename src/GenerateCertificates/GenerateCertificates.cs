@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace GenerateCertificates;
 
@@ -21,6 +22,30 @@ public static class GenerateCertificates
 
     var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(2));
 
-    return Convert.ToBase64String(certificate.Export(X509ContentType.Pfx, string.Empty));
+    // Export the certificate and private key as PEM
+    var certPem = ExportCertificatePem(certificate);
+    var privateKeyPem = ExportPrivateKeyPem(algorithm);
+
+    // Combine the certificate and private key into a single PEM string
+    return certPem + privateKeyPem;
+  }
+
+  private static string ExportCertificatePem(X509Certificate2 certificate)
+  {
+    var builder = new StringBuilder();
+    builder.AppendLine("-----BEGIN CERTIFICATE-----");
+    builder.AppendLine(Convert.ToBase64String(certificate.RawData, Base64FormattingOptions.InsertLineBreaks));
+    builder.AppendLine("-----END CERTIFICATE-----");
+    return builder.ToString();
+  }
+
+  private static string ExportPrivateKeyPem(RSA rsa)
+  {
+    var builder = new StringBuilder();
+    var privateKeyBytes = rsa.ExportRSAPrivateKey();
+    builder.AppendLine("-----BEGIN RSA PRIVATE KEY-----");
+    builder.AppendLine(Convert.ToBase64String(privateKeyBytes, Base64FormattingOptions.InsertLineBreaks));
+    builder.AppendLine("-----END RSA PRIVATE KEY-----");
+    return builder.ToString();
   }
 }

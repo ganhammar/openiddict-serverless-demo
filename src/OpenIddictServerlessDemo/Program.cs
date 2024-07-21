@@ -25,7 +25,21 @@ services
   .AddDataProtection()
   .PersistKeysToAWSSystemsManager("/OpenIddictServerlessDemo/DataProtection");
 
-services  
+var getCertificateParts = (string cert) =>
+{
+  var signingCertificateParts = cert.Split("-----\n-----");
+
+  var first = $"{signingCertificateParts[0]}-----";
+  var second = $"-----{signingCertificateParts[1]}";
+
+  return new
+  {
+    Cert = (first.Contains("BEGIN CERTIFICATE") ? first : second).AsMemory(),
+    Key = (first.Contains("BEGIN CERTIFICATE") ? second : first).AsMemory()
+  };
+};
+
+services
   .AddOpenIddict()
   .AddCore(builder =>
   {
@@ -58,9 +72,13 @@ services
         throw new InvalidOperationException("SigningCertificate and EncryptionCertificate must be set in the configuration.");
       }
 
+      var signingCertificateParts = getCertificateParts(signingCertificate);
+      var encryptionCertificateParts = getCertificateParts(encryptionCertificate);
+
       builder
-        .AddSigningCertificate(new X509Certificate2(Convert.FromBase64String(signingCertificate)))
-        .AddEncryptionCertificate(new X509Certificate2(Convert.FromBase64String(encryptionCertificate)));
+        .AddSigningCertificate(X509Certificate2.CreateFromPem(signingCertificateParts.Cert.Span, signingCertificateParts.Key.Span));
+      builder
+        .AddEncryptionCertificate(X509Certificate2.CreateFromPem(encryptionCertificateParts.Cert.Span, encryptionCertificateParts.Key.Span));
     }
   });
 
