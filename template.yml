@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: OpenIddit Serverless Demo
 
+Parameters:
+  WebBucketName:
+    Type: String
+    Description: The name of the Web S3 bucket
+
 Globals:
   Function:
     MemorySize: 1769
@@ -11,7 +16,6 @@ Globals:
     Timeout: 30
     Environment:
       Variables:
-        TABLE_NAME: openiddict-serverless-demo.openiddict
         ASPNETCORE_ENVIRONMENT: Production
 
 Resources:
@@ -31,12 +35,14 @@ Resources:
             Method: ANY
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Sub "openiddict-serverless-demo.openiddict"
+            TableName: "openiddict-serverless-demo.openiddict"
+        - DynamoDBCrudPolicy:
+            TableName: "openiddict-serverless-demo.identity"
         - Statement:
           - Effect: Allow
             Action:
               - ssm:GetParametersByPath
-            Resource: 
+            Resource:
               - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/Certificates
           - Effect: Allow
             Action:
@@ -44,7 +50,7 @@ Resources:
               - ssm:GetParameter
               - ssm:DescribeParameters
               - ssm:GetParametersByPath
-            Resource: 
+            Resource:
               - Fn::Sub: arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/OpenIddictServerlessDemo/DataProtection/
           # Needed for setup script, should not be run during startup in production
           - Effect: Allow
@@ -59,3 +65,53 @@ Resources:
               - Fn::Sub: arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/openiddict-serverless-demo.openiddict
     Metadata:
       BuildMethod: makefile
+  OpenIddictDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Origins:
+          - DomainName:
+              Fn::Sub: "${OpenIddictApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}"
+            Id: OpenIddictApiOrigin
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+          - DomainName:
+              Fn::Sub: "${WebBucketName}.s3.${AWS::Region}.${AWS::URLSuffix}"
+            Id: OpenIddictWebOrigin
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt S3OriginAccessControl.Id
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: OpenIddictApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+            MinTTL: 0
+            MaxTTL: 0
+            DefaultTTL: 0
+            ForwardedValues:
+              QueryString: true
+              Headers: ["Authorization"]
+              Cookies:
+                Forward: all
+        DefaultCacheBehavior:
+          TargetOriginId: OpenIddictWebOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          Compress: true
+          DefaultTTL: 0
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: all
+  S3OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: OpenIddictDemoS3OriginAccessControl
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4

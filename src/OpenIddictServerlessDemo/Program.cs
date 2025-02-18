@@ -1,12 +1,16 @@
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using Amazon.DynamoDBv2;
+using AspNetCore.Identity.AmazonDynamoDB;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.AmazonDynamoDB;
 using OpenIddict.Server.AspNetCore;
+using OpenIddictServerlessDemo.Models;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,6 +44,12 @@ var getCertificateParts = (string cert) =>
 };
 
 services
+  .AddIdentity<DynamoDbUser, DynamoDbRole>()
+  .AddDefaultTokenProviders()
+  .AddDynamoDbStores()
+  .SetDefaultTableName("openiddict-serverless-demo.identity");
+
+services
   .AddOpenIddict()
   .AddCore(builder =>
   {
@@ -50,7 +60,10 @@ services
   .AddServer(builder =>
   {
     builder.SetTokenEndpointUris("/connect/token");
+    builder.SetAuthorizationEndpointUris("/connect/authorize");
+
     builder.AllowClientCredentialsFlow();
+    builder.AllowAuthorizationCodeFlow();
 
     var aspNetCoreBuilder = builder
       .UseAspNetCore()
@@ -84,7 +97,7 @@ services
 
 var app = builder.Build();
 
-app.MapPost("/connect/token", async (
+app.MapPost("/api/connect/token", async (
   HttpContext httpContext,
   IOpenIddictApplicationManager applicationManager,
   IOpenIddictScopeManager scopeManager) =>
@@ -116,11 +129,114 @@ app.MapPost("/connect/token", async (
   return Results.SignIn(principal, new(), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 });
 
+app.MapPost("/api/connect/authorize", async (
+  HttpContext httpContext,
+  UserManager<DynamoDbUser> userManager,
+  SignInManager<DynamoDbUser> signInManager,
+  IOpenIddictScopeManager scopeManager) =>
+{
+  var openIddictRequest = httpContext.GetOpenIddictServerRequest();
+
+  if (httpContext.User?.Identity?.IsAuthenticated != true)
+  {
+    return Results.Challenge();
+  }
+
+  var user = await userManager.GetUserAsync(httpContext.User);
+  var principal = await signInManager.CreateUserPrincipalAsync(user!);
+
+  var scopes = openIddictRequest!.GetScopes();
+  principal.SetScopes(scopes);
+  principal.SetResources(await scopeManager.ListResourcesAsync(scopes).ToListAsync());
+
+  foreach (var claim in principal.Claims)
+  {
+    claim.SetDestinations(GetDestinations(claim, principal));
+  }
+
+  return Results.SignIn(principal, new(), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+});
+
+static IEnumerable<string> GetDestinations(Claim claim, ClaimsPrincipal principal)
+{
+  switch (claim.Type)
+  {
+    case Claims.Name:
+      yield return Destinations.AccessToken;
+
+      if (principal.HasScope(Scopes.Profile))
+        yield return Destinations.IdentityToken;
+
+      yield break;
+
+    case Claims.Email:
+      yield return Destinations.AccessToken;
+
+      if (principal.HasScope(Scopes.Email))
+        yield return Destinations.IdentityToken;
+
+      yield break;
+
+    case Claims.Role:
+      yield return Destinations.AccessToken;
+
+      if (principal.HasScope(Scopes.Roles))
+        yield return Destinations.IdentityToken;
+
+      yield break;
+
+    // Never include the security stamp in the access and identity tokens, as it's a secret value.
+    case "AspNet.Identity.SecurityStamp": yield break;
+
+    default:
+      yield return Destinations.AccessToken;
+      yield break;
+  }
+}
+
+app.MapPost("/api/user/login", [Consumes("application/json")] async (
+  Login? login,
+  HttpContext httpContext,
+  UserManager<DynamoDbUser> userManager,
+  SignInManager<DynamoDbUser> signInManager) =>
+{
+  if (string.IsNullOrEmpty(login?.Email) || string.IsNullOrEmpty(login?.Password))
+  {
+    return Results.BadRequest();
+  }
+
+  var user = await userManager.FindByEmailAsync(login.Email);
+  if (user == default)
+  {
+    return Results.BadRequest();
+  }
+
+  return Results.Ok(new LoginResult(
+    await signInManager.PasswordSignInAsync(
+      user.UserName!, login.Password, false, false)));
+});
+
+app.MapGet("/api/user/current", async(
+  HttpContext httpContext,
+  UserManager<DynamoDbUser> userManager
+) =>
+{
+  if (httpContext!.User?.Identity?.IsAuthenticated != true)
+  {
+    return Results.NotFound();
+  }
+
+  var user = await userManager.GetUserAsync(httpContext!.User);
+  return Results.Ok(user);
+});
+
 // Setup: Only for demo purpose, should not be run during startup in production, move to setup script
 OpenIddictDynamoDbSetup.EnsureInitialized(app.Services);
+AspNetCoreIdentityDynamoDbSetup.EnsureInitialized(app.Services);
 using (var scope = app.Services.CreateScope())
 {
   CreateDemoClient(scope.ServiceProvider).GetAwaiter().GetResult();
+  CreateDemoUser(scope.ServiceProvider).GetAwaiter().GetResult();
 }
 
 static async Task CreateDemoClient(IServiceProvider provider)
@@ -145,6 +261,18 @@ static async Task CreateDemoClient(IServiceProvider provider)
       Permissions.GrantTypes.ClientCredentials
     }
   });
+}
+
+static async Task CreateDemoUser(IServiceProvider provider)
+{
+  var manager = provider.GetRequiredService<UserManager<DynamoDbUser>>();
+  var user = new DynamoDbUser
+  {
+    UserName = "Alice",
+    Email = "alice@wonderland.com"
+  };
+
+  await manager.CreateAsync(user, "Pass@word1");
 }
 // End of setup
 
