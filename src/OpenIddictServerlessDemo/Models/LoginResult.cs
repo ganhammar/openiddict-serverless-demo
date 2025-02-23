@@ -2,20 +2,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace OpenIddictServerlessDemo.Models;
 
-public class LoginResult
+public class LoginResult(SignInResult signInResult)
 {
-  public LoginResult() { }
-
-  public LoginResult(SignInResult signInResult)
-  {
-    Succeeded = signInResult.Succeeded;
-    IsLockedOut = signInResult.IsLockedOut;
-    IsNotAllowed = signInResult.IsNotAllowed;
-    RequiresTwoFactor = signInResult.RequiresTwoFactor;
-  }
-
-  public bool Succeeded { get; set; }
-  public bool IsLockedOut { get; set; }
-  public bool IsNotAllowed { get; set; }
-  public bool RequiresTwoFactor { get; set; }
+  public bool Succeeded { get; set; } = signInResult.Succeeded;
+  public bool IsLockedOut { get; set; } = signInResult.IsLockedOut;
+  public bool IsNotAllowed { get; set; } = signInResult.IsNotAllowed;
+  public bool RequiresTwoFactor { get; set; } = signInResult.RequiresTwoFactor;
 }

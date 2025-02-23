@@ -195,7 +195,7 @@ static IEnumerable<string> GetDestinations(Claim claim, ClaimsPrincipal principa
 }
 
 app.MapPost("/api/user/login", [Consumes("application/json")] async (
-  Login? login,
+  LoginInput? login,
   HttpContext httpContext,
   UserManager<DynamoDbUser> userManager,
   SignInManager<DynamoDbUser> signInManager) =>
